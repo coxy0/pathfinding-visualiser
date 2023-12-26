@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/x-icon" href="/icon.ico" />
+    <link rel="stylesheet" href="style.css" />
+    <script
+      defer
+      src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"
+    ></script>
+    <script defer src="src/sketch.js" defer></script>
+    <title>Pathfinding visualiser</title>
+  </head>
+  <body>
+    <div id="canvas-container" class="flex"></div>
+    <div id="button-container" class="flex"></div>
+    <div id="slider-container" class="flex">
+      <h2 class="flex">Grid size</h2>
+      <input type="range" min="3" max="25" value="5" id="grid-size-slider" />
+      <h2 id="grid-size-slider-output" class="flex"></h2>
+      <!-- <input
+        type="range"
+        min="1"
+        max="9"
+        value="3"
+        id="wall-chance-slider"
+        class="flex"
+      /> -->
+    </div>
+  </body>
+</html>
