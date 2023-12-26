@@ -246,8 +246,8 @@ let configureCellSizeSlider = (onUpdate) => {
   };
 };
 
-let getSliderValue = () => {
-  let slider = document.getElementById("grid-size-slider");
+let getSliderValue = (sliderID) => {
+  let slider = document.getElementById(sliderID);
   return slider.value;
 };
 
@@ -278,7 +278,7 @@ function setup() {
   });
 
   configureCellSizeSlider(() => {
-    let sliderValue = getSliderValue();
+    let sliderValue = getSliderValue("grid-size-slider");
     setRowsAndCols(sliderValue);
     generateNewGrid();
   });

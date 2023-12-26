@@ -13,20 +13,14 @@
     <title>Pathfinding visualiser</title>
   </head>
   <body>
-    <div id="canvas-container" class="flex"></div>
-    <div id="button-container" class="flex"></div>
-    <div id="slider-container" class="flex">
-      <h2 class="flex">Grid size</h2>
-      <input type="range" min="3" max="25" value="5" id="grid-size-slider" />
-      <h2 id="grid-size-slider-output" class="flex"></h2>
-      <!-- <input
-        type="range"
-        min="1"
-        max="9"
-        value="3"
-        id="wall-chance-slider"
-        class="flex"
-      /> -->
+    <div id="wrapper" class="flex">
+      <div id="canvas-container"></div>
+      <div id="button-container"></div>
+      <div id="slider-container" class="flex">
+        <h2>Grid size</h2>
+        <input type="range" min="3" max="25" value="5" id="grid-size-slider" />
+        <h2 id="grid-size-slider-output"></h2>
+      </div>
     </div>
   </body>
 </html>
