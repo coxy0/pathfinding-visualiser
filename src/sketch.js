@@ -8,14 +8,23 @@ class Cell {
     this.g = 0;
     this.h = 0;
 
-    this.neighbours = [];
-    this.previous = undefined;
+    this.initCell();
 
     this.wall = false;
     if (!(i == 0 && j == 0) && random() < 0.3) {
       this.wall = true;
     }
   }
+
+  initCell = () => {
+    this.wall = false;
+
+    this.neighbours = [];
+    this.previous = undefined;
+
+    this.walls = [false, false, false, false];
+    this.visited = false;
+  };
 
   findNeighbours = (grid) => {
     if (this.j > 0) {
@@ -45,6 +54,7 @@ class Grid {
     this.rows = rows;
     this.cols = cols;
     this.cellWidth = cellWidth;
+
     this.cells = this.createAndFillArray();
     this.findNeighbours();
   }
@@ -70,16 +80,70 @@ class Grid {
     }
   };
 
+  initAllCells = () => {
+    for (let row of this.cells) {
+      for (let cell of row) {
+        cell.initCell();
+      }
+    }
+    this.findNeighbours();
+  };
+
+  setAllWalls = () => {
+    for (let row of this.cells) {
+      for (let cell of row) {
+        cell.walls = [true, true, true, true];
+      }
+    }
+  };
+
+  removeWall = (cell1, cell2) => {
+    let di = cell1.i - cell2.i;
+    let dj = cell1.j - cell2.j;
+    if (di == 1) {
+      cell1.walls[2] = false;
+      cell2.walls[3] = false;
+    } else if (di == -1) {
+      cell1.walls[3] = false;
+      cell2.walls[2] = false;
+    } else if (dj == 1) {
+      cell1.walls[0] = false;
+      cell2.walls[1] = false;
+    } else if (dj == -1) {
+      cell1.walls[1] = false;
+      cell2.walls[0] = false;
+    }
+  };
+
   drawCells = () => {
+    let w = this.cellWidth;
     for (let row of this.cells) {
       for (let cell of row) {
         let colour = cell.wall ? color(0) : color(255);
         cell.show(colour);
+
+        let wallsPos = [
+          [cell.j * w, cell.i * w, cell.j * w, (cell.i + 1) * w],
+          [(cell.j + 1) * w, cell.i * w, (cell.j + 1) * w, (cell.i + 1) * w],
+          [cell.j * w, cell.i * w, (cell.j + 1) * w, cell.i * w],
+          [cell.j * w, (cell.i + 1) * w, (cell.j + 1) * w, (cell.i + 1) * w],
+        ];
+
+        stroke(0);
+        strokeWeight(1);
+        for (let i = 0; i < 4; i++) {
+          if (cell.walls[i]) {
+            line(
+              wallsPos[i][0],
+              wallsPos[i][1],
+              wallsPos[i][2],
+              wallsPos[i][3]
+            );
+          }
+        }
       }
     }
 
-    stroke(0);
-    strokeWeight(1);
     noFill();
     rect(0, 0, width, height);
   };
@@ -210,11 +274,12 @@ let makeCanvas = () => {
 
 let rows, cols, cellWidth;
 let grid;
-let pathfinder;
+let pathfinder, active;
+let pathfinderRunning = false;
 
 let setRowsAndCols = (num) => {
   rows = cols = num;
-  cellWidth = width / cols;
+  cellWidth = height / rows;
 };
 
 let generateNewGrid = () => {
@@ -222,17 +287,29 @@ let generateNewGrid = () => {
   let start = grid.cells[0][0];
   let goal = grid.cells[rows - 1][cols - 1];
   pathfinder = new AStar(start, goal);
-  pathfinder.start = start;
-  pathfinder.goal = goal;
 };
 
-let addButton = (text, onClick) => {
+let addButton = (text, buttonID, onClick) => {
   let button = document.createElement("button");
   button.innerText = text;
+  button.id = buttonID;
+
   button.onclick = onClick;
 
   let buttonContainer = document.getElementById("button-container");
   buttonContainer.appendChild(button);
+};
+
+let disableButton = (buttonID, disable) => {
+  let button = document.getElementById(buttonID);
+  button.disabled = disable;
+};
+
+let disableAllButtons = (disable) => {
+  let buttons = Array.from(document.querySelectorAll("button"));
+  for (let button of buttons) {
+    disableButton(button.id, disable);
+  }
 };
 
 let configureCellSizeSlider = (onUpdate) => {
@@ -256,26 +333,36 @@ let disableSlider = (disable) => {
   slider.disabled = disable;
 };
 
+let resetPathfinder = () => {
+  pathfinderRunning = false;
+  pathfinder.initialise();
+  disableSlider(false);
+};
+
 function setup() {
+  frameRate(30);
+
   makeCanvas();
   setRowsAndCols(5);
   generateNewGrid();
 
-  running = false;
-  let resetPathfinder = () => {
-    running = false;
-    disableSlider(false);
-    pathfinder.initialise();
-  };
-  addButton("Start pathfinding", () => {
-    running = true;
+  addButton("Start pathfinding", "start-pathfinding", () => {
+    pathfinderRunning = true;
     disableSlider(true);
   });
-  addButton("Reset pathfinder", resetPathfinder);
-  addButton("Generate new grid", () => {
-    generateNewGrid();
+  addButton("Reset pathfinder", "reset-pathfinding", resetPathfinder);
+  addButton("Generate random grid", "random-grid", () => {
     resetPathfinder();
+    generateNewGrid();
   });
+  // addButton("Generate maze", "maze", () => {
+  //   resetPathfinder();
+  //   disableAllButtons(true);
+  //   disableSlider(true);
+  //   //generate maze
+  //   disableAllButtons(false);
+  //   disableSlider(false);
+  // });
 
   configureCellSizeSlider(() => {
     let sliderValue = getSliderValue("grid-size-slider");
@@ -288,7 +375,7 @@ function draw() {
   background(200);
 
   grid.drawCells();
-  if (running) {
+  if (pathfinderRunning) {
     pathfinder.run();
   }
 }
