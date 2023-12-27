@@ -266,7 +266,8 @@ class AStar {
 }
 
 let makeCanvas = () => {
-  let canvas = createCanvas(500, 500);
+  let dimension = Math.min(window.innerWidth, window.innerHeight) * 0.85;
+  let canvas = createCanvas(dimension, dimension);
   let canvasElement = canvas.elt;
   let canvasDiv = document.getElementById("canvas-container");
   canvasDiv.appendChild(canvasElement);
