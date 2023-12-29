@@ -11,7 +11,8 @@ class Cell {
     this.initCell();
 
     this.wall = false;
-    if (!(i == 0 && j == 0) && random() < 0.3) {
+    this.wallProbability = 0.3;
+    if (!(i == 0 && j == 0) && random() < this.wallProbability) {
       this.wall = true;
     }
   }
@@ -115,6 +116,37 @@ class Grid {
     }
   };
 
+  generateMaze = () => {
+    this.initAllCells();
+    this.setAllWalls();
+
+    let current = this.cells[0][0];
+    let stack = [];
+    let iterations = 0;
+
+    while (stack.length > 0 || iterations == 0) {
+      current.visited = true;
+
+      let neighbours = [];
+      for (let neighbour of current.neighbours) {
+        if (!neighbour.visited) {
+          neighbours.push(neighbour);
+        }
+      }
+      let next = neighbours[floor(random(0, neighbours.length))];
+      if (next) {
+        next.visited = true;
+        stack.push(current);
+        this.removeWall(current, next);
+        current = next;
+      } else if (stack.length > 0) {
+        current = stack.pop();
+      }
+
+      iterations++;
+    }
+  };
+
   drawCells = () => {
     let w = this.cellWidth;
     for (let row of this.cells) {
@@ -130,7 +162,7 @@ class Grid {
         ];
 
         stroke(0);
-        strokeWeight(1);
+        strokeWeight(2);
         for (let i = 0; i < 4; i++) {
           if (cell.walls[i]) {
             line(
@@ -143,9 +175,6 @@ class Grid {
         }
       }
     }
-
-    noFill();
-    rect(0, 0, width, height);
   };
 }
 
@@ -197,7 +226,15 @@ class AStar {
 
       let neighbours = this.current.neighbours;
       for (let neighbour of neighbours) {
-        if (!neighbour.wall && !this.closedSet.includes(neighbour)) {
+        let di = this.current.i - neighbour.i;
+        let dj = this.current.j - neighbour.j;
+        let neighbourIsWall =
+          neighbour.wall ||
+          (dj == -1 && neighbour.walls[0]) ||
+          (dj == 1 && neighbour.walls[1]) ||
+          (di == -1 && neighbour.walls[2]) ||
+          (di == 1 && neighbour.walls[3]);
+        if (!neighbourIsWall && !this.closedSet.includes(neighbour)) {
           let tentativeG = this.current.g + 1;
 
           let newPath = false;
@@ -265,6 +302,18 @@ class AStar {
   };
 }
 
+class Dijkstra {
+  constructor(start, goal) {}
+
+  initialise = () => {};
+
+  pathfind = () => {};
+
+  run = () => {
+    this.pathfind();
+  };
+}
+
 let makeCanvas = () => {
   let dimension = Math.min(window.innerWidth, window.innerHeight) * 0.85;
   let canvas = createCanvas(dimension, dimension);
@@ -275,7 +324,8 @@ let makeCanvas = () => {
 
 let rows, cols, cellWidth;
 let grid;
-let pathfinder, active;
+let pathfinder;
+let activePathfinder = "A*";
 let pathfinderRunning = false;
 
 let setRowsAndCols = (num) => {
@@ -283,21 +333,35 @@ let setRowsAndCols = (num) => {
   cellWidth = height / rows;
 };
 
-let generateNewGrid = () => {
-  grid = new Grid(rows, cols, cellWidth);
+let getPathfinder = () => {
+  const pathfinderClasses = {
+    "A*": AStar,
+    "Dijkstra's": Dijkstra,
+  };
+
   let start = grid.cells[0][0];
   let goal = grid.cells[rows - 1][cols - 1];
-  pathfinder = new AStar(start, goal);
+  return new pathfinderClasses[activePathfinder](start, goal);
 };
 
-let addButton = (text, buttonID, onClick) => {
+let generateNewGrid = () => {
+  grid = new Grid(rows, cols, cellWidth);
+  pathfinder = getPathfinder();
+};
+
+let addButton = (row, text, buttonID, onClick) => {
   let button = document.createElement("button");
   button.innerText = text;
   button.id = buttonID;
 
   button.onclick = onClick;
 
-  let buttonContainer = document.getElementById("button-container");
+  let buttonContainer;
+  if (row == 1) {
+    buttonContainer = document.getElementById("button-container-row-1");
+  } else if (row == 2) {
+    buttonContainer = document.getElementById("button-container-row-2");
+  }
   buttonContainer.appendChild(button);
 };
 
@@ -313,14 +377,17 @@ let disableAllButtons = (disable) => {
   }
 };
 
-let configureCellSizeSlider = (onUpdate) => {
+let configureCellSizeSlider = () => {
   let slider = document.getElementById("grid-size-slider");
   let output = document.getElementById("grid-size-slider-output");
 
   output.innerHTML = `${slider.value}x${slider.value}`;
   slider.oninput = function () {
     output.innerHTML = `${this.value}x${this.value}`;
-    onUpdate();
+
+    let sliderValue = getSliderValue("grid-size-slider");
+    setRowsAndCols(sliderValue);
+    generateNewGrid();
   };
 };
 
@@ -329,15 +396,15 @@ let getSliderValue = (sliderID) => {
   return slider.value;
 };
 
-let disableSlider = (disable) => {
-  let slider = document.getElementById("grid-size-slider");
+let disableSlider = (sliderID, disable) => {
+  let slider = document.getElementById(sliderID);
   slider.disabled = disable;
 };
 
 let resetPathfinder = () => {
   pathfinderRunning = false;
   pathfinder.initialise();
-  disableSlider(false);
+  disableSlider("grid-size-slider", false);
 };
 
 function setup() {
@@ -347,29 +414,47 @@ function setup() {
   setRowsAndCols(5);
   generateNewGrid();
 
-  addButton("Start pathfinding", "start-pathfinding", () => {
-    pathfinderRunning = true;
-    disableSlider(true);
-  });
-  addButton("Reset pathfinder", "reset-pathfinding", resetPathfinder);
-  addButton("Generate random grid", "random-grid", () => {
+  // row 1
+  addButton(
+    1,
+    `Start ${activePathfinder} pathfinding`,
+    "start-pathfinding",
+    () => {
+      pathfinderRunning = true;
+      disableSlider("grid-size-slider", true);
+    }
+  );
+  addButton(1, "Reset pathfinder", "reset-pathfinding", resetPathfinder);
+  addButton(1, "Generate random grid", "random-grid", () => {
     resetPathfinder();
     generateNewGrid();
   });
-  // addButton("Generate maze", "maze", () => {
-  //   resetPathfinder();
-  //   disableAllButtons(true);
-  //   disableSlider(true);
-  //   //generate maze
-  //   disableAllButtons(false);
-  //   disableSlider(false);
-  // });
-
-  configureCellSizeSlider(() => {
-    let sliderValue = getSliderValue("grid-size-slider");
-    setRowsAndCols(sliderValue);
-    generateNewGrid();
+  addButton(1, "Generate maze", "generate-maze", () => {
+    resetPathfinder();
+    grid.generateMaze();
   });
+
+  // row 2
+  addButton(2, "Switch to A*", "switch-to-a-star", () => {});
+  addButton(2, "Switch to Dijkstra's", "switch-to-dijkstra", () => {});
+  let row2Div = document.getElementById("button-container-row-2");
+  let buttons = row2Div.querySelectorAll("button");
+  buttons.forEach(function (button) {
+    button.onclick = () => {
+      let buttonText = button.innerHTML;
+      let algorithm = buttonText.split(" ")[2];
+      if (activePathfinder != algorithm) {
+        resetPathfinder();
+        activePathfinder = algorithm;
+        pathfinder = getPathfinder();
+      }
+
+      let startButton = document.getElementById("start-pathfinding");
+      startButton.innerHTML = `Start ${algorithm} pathfinding`;
+    };
+  });
+
+  configureCellSizeSlider();
 }
 
 function draw() {
