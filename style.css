@@ -34,3 +34,9 @@ canvas {
 #grid-size-slider {
   width: 20vw;
 }
+
+@media (min-width: 600px) {
+  #grid-size-slider {
+    width: 15vw;
+  }
+}

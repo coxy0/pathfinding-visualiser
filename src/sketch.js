@@ -11,10 +11,11 @@ class Cell {
     this.initCell();
 
     this.wall = false;
-    this.wallProbability = 0.3;
+    this.wallProbability = 0.15;
     if (!(i == 0 && j == 0) && random() < this.wallProbability) {
       this.wall = true;
     }
+    this.walls = [false, false, false, false];
   }
 
   initCell = () => {
@@ -23,7 +24,6 @@ class Cell {
     this.neighbours = [];
     this.previous = undefined;
 
-    this.walls = [false, false, false, false];
     this.visited = false;
   };
 
@@ -145,6 +145,7 @@ class Grid {
 
       iterations++;
     }
+    this.initAllCells();
   };
 
   drawCells = () => {
@@ -204,7 +205,7 @@ class AStar {
   };
 
   heuristic = (a, b) => {
-    dist(a.i, a.j, b.i, b.j);
+    return dist(a.i, a.j, b.i, b.j);
   };
 
   pathfind = () => {
@@ -303,14 +304,120 @@ class AStar {
 }
 
 class Dijkstra {
-  constructor(start, goal) {}
+  constructor(start, goal) {
+    this.start = start;
+    this.goal = goal;
+    this.initialise();
+  }
 
-  initialise = () => {};
+  initialise = () => {
+    this.openSet = [this.start];
+    this.closedSet = [];
+    this.current = undefined;
 
-  pathfind = () => {};
+    this.path = undefined;
+    this.done = false;
+    this.noSolution = false;
+  };
+
+  removeFromArray = (arr, item) => {
+    for (let i = arr.length - 1; i >= 0; i--) {
+      if (arr[i] == item) {
+        arr.splice(i, 1);
+      }
+    }
+  };
+
+  pathfind = () => {
+    if (this.openSet.length > 0) {
+      this.current = this.openSet[0];
+      for (let cell of this.openSet) {
+        if (cell.g < this.current.g) {
+          this.current = cell;
+        }
+      }
+
+      if (this.current === this.goal) {
+        this.done = true;
+        return;
+      }
+
+      this.removeFromArray(this.openSet, this.current);
+      this.closedSet.push(this.current);
+
+      let neighbours = this.current.neighbours;
+      for (let neighbour of neighbours) {
+        let di = this.current.i - neighbour.i;
+        let dj = this.current.j - neighbour.j;
+        let neighbourIsWall =
+          neighbour.wall ||
+          (dj == -1 && neighbour.walls[0]) ||
+          (dj == 1 && neighbour.walls[1]) ||
+          (di == -1 && neighbour.walls[2]) ||
+          (di == 1 && neighbour.walls[3]);
+        if (!neighbourIsWall && !this.closedSet.includes(neighbour)) {
+          let tentativeG = this.current.g + 1;
+
+          let newPath = false;
+          if (this.openSet.includes(neighbour)) {
+            if (tentativeG < neighbour.g) {
+              neighbour.g = tentativeG;
+              newPath = true;
+            }
+          } else {
+            neighbour.g = tentativeG;
+            this.openSet.push(neighbour);
+            newPath = true;
+          }
+
+          if (newPath) {
+            neighbour.previous = this.current;
+          }
+        }
+      }
+    } else {
+      this.noSolution = true;
+      return;
+    }
+  };
+
+  drawSetCells = () => {
+    if (!this.done) {
+      for (let cell of this.closedSet) {
+        cell.show(color(255, 0, 0, 100));
+      }
+      for (let cell of this.openSet) {
+        cell.show(color(0, 255, 0));
+      }
+    }
+  };
+
+  drawPath = () => {
+    if (!this.noSolution) {
+      this.path = [this.current];
+      while (this.current.previous) {
+        this.path.push(this.current.previous);
+        this.current = this.current.previous;
+      }
+    }
+
+    let w = this.start.cellWidth;
+    for (let i = 0; i < this.path.length - 1; i++) {
+      stroke(color(0, 0, 255));
+      strokeWeight(w / 4);
+      line(
+        (this.path[i].j + 0.5) * w,
+        (this.path[i].i + 0.5) * w,
+        (this.path[i + 1].j + 0.5) * w,
+        (this.path[i + 1].i + 0.5) * w
+      );
+    }
+  };
 
   run = () => {
     this.pathfind();
+    this.drawSetCells();
+    this.drawPath();
   };
 }
 
@@ -326,6 +433,7 @@ let rows, cols, cellWidth;
 let grid;
 let pathfinder;
 let activePathfinder = "A*";
+// let activePathfinder = "Dijkstra's";
 let pathfinderRunning = false;
 
 let setRowsAndCols = (num) => {
