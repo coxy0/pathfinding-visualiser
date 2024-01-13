@@ -1,5 +1,5 @@
 function resizeP5Canvas() {
-  var canvas = document.getElementById("defaultCanvas0");
+  var canvas = document.getElementById("p5canvas");
   if (canvas) {
     var minDimension = Math.min(window.innerWidth, window.innerHeight) * 0.85;
     canvas.style.width = minDimension + "px";

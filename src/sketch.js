@@ -1,3 +1,11 @@
+let removeFromArray = (arr, item) => {
+  for (let i = arr.length - 1; i >= 0; i--) {
+    if (arr[i] == item) {
+      arr.splice(i, 1);
+    }
+  }
+};
+
 class Cell {
   constructor(i, j, cellWidth) {
     this.i = i;
@@ -11,7 +19,7 @@ class Cell {
     this.initCell();
 
     this.wall = false;
-    this.wallProbability = 0.15;
+    this.wallProbability = 0.3;
     if (!(i == 0 && j == 0) && random() < this.wallProbability) {
       this.wall = true;
     }
@@ -54,10 +62,13 @@ class Grid {
   constructor(rows, cols, cellWidth) {
     this.rows = rows;
     this.cols = cols;
-    this.cellWidth = cellWidth;
 
+    this.cellWidth = cellWidth;
     this.cells = this.createAndFillArray();
     this.findNeighbours();
+
+    this.start = this.cells[0][0];
+    this.goal = this.cells[rows - 1][cols - 1];
   }
 
   createAndFillArray = () => {
@@ -71,6 +82,15 @@ class Grid {
       }
     }
     return cells;
+  };
+
+  setCellWidths = (w) => {
+    this.cellWidth = w;
+    for (let row of this.cells) {
+      for (let cell of row) {
+        cell.cellWidth = w;
+      }
+    }
   };
 
   findNeighbours = () => {
@@ -145,7 +165,23 @@ class Grid {
 
       iterations++;
     }
+
     this.initAllCells();
+    this.setStart(this.cells[0][0]);
+  };
+
+  setStart = (cell) => {
+    if (cell.wall) {
+      cell.wall = false;
+    }
+    this.start = cell;
+  };
+
+  setGoal = (cell) => {
+    if (cell.wall) {
+      cell.wall = false;
+    }
+    this.goal = cell;
   };
 
   drawCells = () => {
@@ -153,6 +189,11 @@ class Grid {
     for (let row of this.cells) {
       for (let cell of row) {
         let colour = cell.wall ? color(0) : color(255);
+        if (cell == this.start) {
+          colour = color(255, 0, 0);
+        } else if (cell == this.goal) {
+          colour = color(0, 255, 0);
+        }
         cell.show(colour);
 
         let wallsPos = [
@@ -196,14 +237,6 @@ class AStar {
     this.noSolution = false;
   };
 
-  removeFromArray = (arr, item) => {
-    for (let i = arr.length - 1; i >= 0; i--) {
-      if (arr[i] == item) {
-        arr.splice(i, 1);
-      }
-    }
-  };
-
   heuristic = (a, b) => {
     return dist(a.i, a.j, b.i, b.j);
   };
@@ -222,7 +255,7 @@ class AStar {
         return;
       }
 
-      this.removeFromArray(this.openSet, this.current);
+      removeFromArray(this.openSet, this.current);
       this.closedSet.push(this.current);
 
       let neighbours = this.current.neighbours;
@@ -266,10 +299,12 @@ class AStar {
   drawSetCells = () => {
     if (!this.done) {
       for (let cell of this.closedSet) {
-        cell.show(color(255, 0, 0, 100));
+        if (cell.i || cell.j) {
+          cell.show(color(255, 0, 0, 100));
+        }
       }
       for (let cell of this.openSet) {
-        cell.show(color(0, 255, 0));
+        cell.show(color(0, 255, 0, 200));
       }
     }
   };
@@ -320,14 +355,6 @@ class Dijkstra {
     this.noSolution = false;
   };
 
-  removeFromArray = (arr, item) => {
-    for (let i = arr.length - 1; i >= 0; i--) {
-      if (arr[i] == item) {
-        arr.splice(i, 1);
-      }
-    }
-  };
-
   pathfind = () => {
     if (this.openSet.length > 0) {
       this.current = this.openSet[0];
@@ -342,7 +369,7 @@ class Dijkstra {
         return;
       }
 
-      this.removeFromArray(this.openSet, this.current);
+      removeFromArray(this.openSet, this.current);
       this.closedSet.push(this.current);
 
       let neighbours = this.current.neighbours;
@@ -384,10 +411,12 @@ class Dijkstra {
   drawSetCells = () => {
     if (!this.done) {
       for (let cell of this.closedSet) {
-        cell.show(color(255, 0, 0, 100));
+        if (cell.i || cell.j) {
+          cell.show(color(255, 0, 0, 100));
+        }
       }
       for (let cell of this.openSet) {
-        cell.show(color(0, 255, 0));
+        cell.show(color(0, 255, 0, 200));
       }
     }
   };
@@ -421,19 +450,33 @@ class Dijkstra {
   };
 }
 
+let canvas;
+
 let makeCanvas = () => {
-  let dimension = Math.min(window.innerWidth, window.innerHeight) * 0.85;
-  let canvas = createCanvas(dimension, dimension);
+  canvas = createCanvas(400, 400);
+  canvasResize();
   let canvasElement = canvas.elt;
+  canvasElement.id = "p5canvas";
   let canvasDiv = document.getElementById("canvas-container");
   canvasDiv.appendChild(canvasElement);
+};
+
+let canvasResize = () => {
+  if (canvas) {
+    let dimension = Math.min(window.innerWidth, window.innerHeight) * 0.85;
+    resizeCanvas(dimension, dimension);
+
+    if (grid) {
+      cellWidth = height / rows;
+      grid.setCellWidths(cellWidth);
+    }
+  }
 };
 
 let rows, cols, cellWidth;
 let grid;
 let pathfinder;
 let activePathfinder = "A*";
-// let activePathfinder = "Dijkstra's";
 let pathfinderRunning = false;
 
 let setRowsAndCols = (num) => {
@@ -455,6 +498,8 @@ let getPathfinder = () => {
 let generateNewGrid = () => {
   grid = new Grid(rows, cols, cellWidth);
   pathfinder = getPathfinder();
+  grid.setStart(pathfinder.start);
+  grid.setGoal(pathfinder.goal);
 };
 
 let addButton = (row, text, buttonID, onClick) => {
@@ -491,7 +536,8 @@ let configureCellSizeSlider = () => {
 
   output.innerHTML = `${slider.value}x${slider.value}`;
   slider.oninput = function () {
-    output.innerHTML = `${this.value}x${this.value}`;
+    let value = this.value;
+    output.innerHTML = `${value}x${value}`;
 
     let sliderValue = getSliderValue("grid-size-slider");
     setRowsAndCols(sliderValue);
@@ -528,6 +574,7 @@ function setup() {
     `Start ${activePathfinder} pathfinding`,
     "start-pathfinding",
     () => {
+      resetPathfinder();
       pathfinderRunning = true;
       disableSlider("grid-size-slider", true);
     }
@@ -572,4 +619,8 @@ function draw() {
   if (pathfinderRunning) {
     pathfinder.run();
   }
+}
+
+function windowResized() {
+  canvasResize();
 }

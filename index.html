@@ -10,19 +10,18 @@
       src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.js"
     ></script>
     <script defer src="src/sketch.js"></script>
-    <script defer src="src/resize.js"></script>
+    <!-- <script defer src="src/resize.js"></script> -->
     <title>Pathfinding visualiser</title>
   </head>
   <body>
     <div id="wrapper" class="flex">
       <div id="canvas-container"></div>
-      <div id="button-container-row-1"></div>
-      <div id="button-container-row-2"></div>
+      <div id="button-container-row-1" class="flex"></div>
+      <div id="button-container-row-2" class="flex"></div>
       <div id="slider-container" class="flex">
         <h2>Grid size</h2>
         <input type="range" min="3" max="40" value="5" id="grid-size-slider" />
         <h2 id="grid-size-slider-output"></h2>
-        <h2>Time elapsed:</h2>
       </div>
     </div>
   </body>
