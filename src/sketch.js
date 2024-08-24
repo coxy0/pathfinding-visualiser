@@ -1,8 +1,6 @@
 let removeFromArray = (arr, item) => {
   for (let i = arr.length - 1; i >= 0; i--) {
-    if (arr[i] == item) {
-      arr.splice(i, 1);
-    }
+    if (arr[i] == item) arr.splice(i, 1);
   }
 };
 
@@ -87,9 +85,7 @@ class Grid {
   setCellWidths = (w) => {
     this.cellWidth = w;
     for (let row of this.cells) {
-      for (let cell of row) {
-        cell.cellWidth = w;
-      }
+      for (let cell of row) cell.cellWidth = w;
     }
   };
 
@@ -103,18 +99,14 @@ class Grid {
 
   initAllCells = () => {
     for (let row of this.cells) {
-      for (let cell of row) {
-        cell.initCell();
-      }
+      for (let cell of row) cell.initCell();
     }
     this.findNeighbours();
   };
 
   setAllWalls = () => {
     for (let row of this.cells) {
-      for (let cell of row) {
-        cell.walls = [true, true, true, true];
-      }
+      for (let cell of row) cell.walls = [true, true, true, true];
     }
   };
 
@@ -149,9 +141,7 @@ class Grid {
 
       let neighbours = [];
       for (let neighbour of current.neighbours) {
-        if (!neighbour.visited) {
-          neighbours.push(neighbour);
-        }
+        if (!neighbour.visited) neighbours.push(neighbour);
       }
       let next = neighbours[floor(random(0, neighbours.length))];
       if (next) {
@@ -159,9 +149,7 @@ class Grid {
         stack.push(current);
         this.removeWall(current, next);
         current = next;
-      } else if (stack.length > 0) {
-        current = stack.pop();
-      }
+      } else if (stack.length > 0) current = stack.pop();
 
       iterations++;
     }
@@ -171,16 +159,12 @@ class Grid {
   };
 
   setStart = (cell) => {
-    if (cell.wall) {
-      cell.wall = false;
-    }
+    if (cell.wall) cell.wall = false;
     this.start = cell;
   };
 
   setGoal = (cell) => {
-    if (cell.wall) {
-      cell.wall = false;
-    }
+    if (cell.wall) cell.wall = false;
     this.goal = cell;
   };
 
@@ -189,11 +173,9 @@ class Grid {
     for (let row of this.cells) {
       for (let cell of row) {
         let colour = cell.wall ? color(0) : color(255);
-        if (cell == this.start) {
-          colour = color(255, 0, 0);
-        } else if (cell == this.goal) {
-          colour = color(0, 255, 0);
-        }
+        if (cell == this.start) colour = color(255, 0, 0);
+        else if (cell == this.goal) colour = color(0, 255, 0);
+
         cell.show(colour);
 
         let wallsPos = [
@@ -206,14 +188,13 @@ class Grid {
         stroke(0);
         strokeWeight(2);
         for (let i = 0; i < 4; i++) {
-          if (cell.walls[i]) {
+          if (cell.walls[i])
             line(
               wallsPos[i][0],
               wallsPos[i][1],
               wallsPos[i][2],
               wallsPos[i][3]
             );
-          }
         }
       }
     }
@@ -245,9 +226,7 @@ class AStar {
     if (this.openSet.length > 0) {
       this.current = this.openSet[0];
       for (let cell of this.openSet) {
-        if (cell.f < this.current.f) {
-          this.current = cell;
-        }
+        if (cell.f < this.current.f) this.current = cell;
       }
 
       if (this.current === this.goal) {
@@ -299,9 +278,7 @@ class AStar {
   drawSetCells = () => {
     if (!this.done) {
       for (let cell of this.closedSet) {
-        if (cell.i || cell.j) {
-          cell.show(color(255, 0, 0, 100));
-        }
+        if (cell.i || cell.j) cell.show(color(255, 0, 0, 100));
       }
       for (let cell of this.openSet) {
         cell.show(color(0, 255, 0, 200));
@@ -359,9 +336,7 @@ class Dijkstra {
     if (this.openSet.length > 0) {
       this.current = this.openSet[0];
       for (let cell of this.openSet) {
-        if (cell.g < this.current.g) {
-          this.current = cell;
-        }
+        if (cell.g < this.current.g) this.current = cell;
       }
 
       if (this.current === this.goal) {
@@ -397,9 +372,7 @@ class Dijkstra {
             newPath = true;
           }
 
-          if (newPath) {
-            neighbour.previous = this.current;
-          }
+          if (newPath) neighbour.previous = this.current;
         }
       }
     } else {
@@ -411,9 +384,7 @@ class Dijkstra {
   drawSetCells = () => {
     if (!this.done) {
       for (let cell of this.closedSet) {
-        if (cell.i || cell.j) {
-          cell.show(color(255, 0, 0, 100));
-        }
+        if (cell.i || cell.j) cell.show(color(255, 0, 0, 100));
       }
       for (let cell of this.openSet) {
         cell.show(color(0, 255, 0, 200));
@@ -616,9 +587,7 @@ function draw() {
   background(200);
 
   grid.drawCells();
-  if (pathfinderRunning) {
-    pathfinder.run();
-  }
+  if (pathfinderRunning) pathfinder.run();
 }
 
 function windowResized() {
